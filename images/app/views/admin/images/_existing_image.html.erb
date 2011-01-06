@@ -32,7 +32,8 @@
 
   <%= images_paginator @images, from_dialog? %>
 
-  <% unless @app_dialog or @images.empty? %>
+  <%# unless @app_dialog or @images.empty? %>
+  <% if false %>
     <div id='existing_image_size_area' class='clearfix'>
       <input type='hidden' name='selected_image_size' id='selected_image_size' />
       <p>
