@@ -1,9 +1,25 @@
 require 'rack/cache'
 require 'dragonfly'
 require 'refinery'
+require 'tempfile'
+
 
 module Refinery
   module Images
+    class BigSquare
+      def big_square(*args)
+        options = args.extract_options!
+        crop = "588x250+0+0"
+        extent = "960x250"        
+        temp_object = args.first
+        raise "Must provide :crop and :extent" if (!crop || !extent)
+        tmp = Tempfile.new(Time.now.to_i.to_s + File.basename(temp_object.path))
+        path = tmp.path
+        tmp.close
+        `convert #{temp_object.path} -bordercolor transparent -gravity northwest -crop #{crop} -compose Copy -gravity northwest -extent #{extent} #{tmp.path}`
+        File.new(path, "r")        
+      end
+    end
     class Engine < Rails::Engine
       initializer 'images-with-dragonfly' do |app|
         app_images = Dragonfly[:images]
@@ -27,9 +43,11 @@ module Refinery
         # and adds the filename onto the end (say the image was 'refinery_is_awesome.jpg')
         # /system/images/BAhbB1sHOgZmIiMyMDEwLzA5LzAxL1NTQ19DbGllbnRfQ29uZi5qcGdbCDoGcDoKdGh1bWIiDjk0MngzNjAjYw/refinery_is_awesome.jpg
         # Officially the way to do it, from: http://markevans.github.com/dragonfly/file.URLs.html
-        app_images.url_suffix = proc{|job|
+        app_images.url_suffix = proc{ |job|
           "/#{job.name}"
         }
+
+        app_images.processor.register(Refinery::Images::BigSquare)
 
         ### Extend active record ###
 
