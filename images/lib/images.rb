@@ -9,8 +9,8 @@ module Refinery
     class BigSquare
       def big_square(*args)
         options = args.extract_options!
-        crop = "588x250+0+0"
-        extent = "960x250"        
+        crop = "958x250+0+0"
+        extent = "958x250"        
         temp_object = args.first
         raise "Must provide :crop and :extent" if (!crop || !extent)
         tmp = Tempfile.new(Time.now.to_i.to_s + File.basename(temp_object.path))
