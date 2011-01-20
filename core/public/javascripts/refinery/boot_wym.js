@@ -20,6 +20,7 @@ onCloseDialog = function(dialog) {
   }
 };
 
+WYMeditor.onload_functions = [];
 var wymeditor_inputs = [];
 var wymeditors_loaded = 0;
 // supply custom_wymeditor_boot_options if you want to override anything here.
@@ -197,7 +198,12 @@ var wymeditor_boot_options = $.extend({
     // fire loaded if all editors loaded
     if(WYMeditor.INSTANCES.length == wymeditors_loaded){
       $('.wym_loading_overlay').remove();
-      WYMeditor.loaded();
+
+      // load any functions that have been registered to happen onload.
+      // these will have to be registered BEFORE postInit is fired (which is fairly quickly).
+      for(i=0; i < WYMeditor.onload_functions.length; i++) {
+        WYMeditor.onload_functions[i]();
+      }
     }
 
     $(wym._iframe).contents().find('body').addClass('wym_iframe_body');
@@ -233,7 +239,7 @@ WYMeditor.init = function() {
   });
 
   wymeditor_inputs.each(function(input) {
-    if ((containing_field = $(this).parents('.field')).get(0).style.height === '') {
+    if ((containing_field = $(this).parents('.field')).length > 0 && containing_field.get(0).style.height === '') {
       containing_field.addClass('hide-overflow')
                       .css('height', $(this).outerHeight() - containing_field.offset().top + $(this).offset().top + 45);
     }

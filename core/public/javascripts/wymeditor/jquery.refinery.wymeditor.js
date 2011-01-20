@@ -810,6 +810,9 @@ WYMeditor.editor.prototype.init = function() {
 
       //enable the skin
       this.loadSkin();
+
+      // store which WYMeditor instance the element owns on the element.
+      $(this._element).data('wymeditor', this);
     }
 };
 
@@ -1811,13 +1814,23 @@ WYMeditor.INIT_DIALOG = function(wym, selected, isIframe) {
           });
         });
 
+       // ensure we know where to put the image.
+       if (replaceable == null) {
+         replaceable = $(wym._doc.body).find("#" + wym._current_unique_stamp);
+       }
        if (replaceable != null) {
          replaceable.after(image).remove();
        }
 
       // fire a click event on the dialogs close button
       wym.close_dialog(e);
+    } else {
+      // remove any save loader animations.
+      $('iframe').contents().find('.save-loader').remove();
+      // tell the user.
+      alert("Please select an image to insert.");
     }
+    e.preventDefault();
   });
 
   $(wym._options.dialogTableSelector).find(wym._options.submitSelector).click(function(e) {

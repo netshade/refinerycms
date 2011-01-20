@@ -27,7 +27,7 @@ module Refinery
         # /system/images/BAhbB1sHOgZmIiMyMDEwLzA5LzAxL1NTQ19DbGllbnRfQ29uZi5qcGdbCDoGcDoKdGh1bWIiDjk0MngzNjAjYw/refinery_is_awesome.pdf
         # Officially the way to do it, from: http://markevans.github.com/dragonfly/file.URLs.html
         app_resources.url_suffix = proc{|job|
-          "/#{job.name}"
+          "/#{job.app.datastore.retrieve(job.uid).last[:name]}"
         }
 
         ### Extend active record ###

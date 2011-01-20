@@ -6,7 +6,7 @@ source 'http://rubygems.org'
 if (java = RUBY_PLATFORM == 'java')
   gem 'activerecord-jdbcsqlite3-adapter', '>= 1.0.2', :platform => :jruby
 else
-  gem 'sqlite3-ruby', :require => 'sqlite3'
+  gem 'sqlite3'
 end
 
 # Use unicorn as the web server
@@ -37,7 +37,7 @@ group :development, :test do
   # RSpec
   gem 'rspec-rails',            '= 2.3'
   # Cucumber
-  gem 'capybara',               :git => 'git://github.com/parndt/capybara'
+  gem 'capybara',               '>= 0.4.1.rc'
   gem 'database_cleaner'
   gem 'cucumber-rails'
   gem 'launchy'
@@ -45,7 +45,7 @@ group :development, :test do
   gem 'spork' unless Bundler::WINDOWS
   gem 'rack-test',              '~> 0.5.6'
   # FIXME: Update json_pure to 1.4.7 when it is released
-  gem 'json_pure', "1.4.6a", :git => "git://github.com/flori/json", :ref => "2c0f8d"
+  gem 'json_pure', "1.4.6a", :git => "git://github.com/flori/json", :ref => "0b15820e245f4048d1bcd29cd60693e4e211ab43"
   # Factory Girl
   gem 'factory_girl'
   gem "#{'j' if java}ruby-prof" unless defined?(RUBY_ENGINE) and RUBY_ENGINE == 'rbx'
@@ -76,8 +76,8 @@ gem 'refinerycms-generators',   '~> 0.9.9', :git => 'git://github.com/resolve/re
 
 # Add i18n support (optional, you can remove this if you really want to).
 gem 'routing-filter',           :git => 'git://github.com/refinerycms/routing-filter'
-gem 'refinerycms-i18n',         '~> 0.9.9'
+gem 'refinerycms-i18n',         '~> 0.9'
 
 gem 'jruby-openssl' if java
-
+gem 'ya2yaml'
 # END USER DEFINED

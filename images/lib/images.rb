@@ -43,8 +43,8 @@ module Refinery
         # and adds the filename onto the end (say the image was 'refinery_is_awesome.jpg')
         # /system/images/BAhbB1sHOgZmIiMyMDEwLzA5LzAxL1NTQ19DbGllbnRfQ29uZi5qcGdbCDoGcDoKdGh1bWIiDjk0MngzNjAjYw/refinery_is_awesome.jpg
         # Officially the way to do it, from: http://markevans.github.com/dragonfly/file.URLs.html
-        app_images.url_suffix = proc{ |job|
-          "/#{job.name}"
+        app_images.url_suffix = proc{|job|
+          "/#{job.app.datastore.retrieve(job.uid).last[:name]}"
         }
 
         app_images.processor.register(Refinery::Images::BigSquare)
