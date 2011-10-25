@@ -2,10 +2,12 @@ nb:
   plugins:
     refinery_dashboard:
       title: Skrivebord
+      description: Gir en oversikt over den siste aktiviteten i Refinery
   admin:
     dashboard:
       index:
         quick_tasks: Vanlige oppgaver
+      actions:
         add_a_new_page: Legg til en ny side
         update_a_page: Oppdater en side
         upload_a_image: Last opp et bilde
@@ -13,15 +15,12 @@ nb:
         change_language: Endre språk
         see_home_page: Se hjemmesiden
       recent_activity:
-        latest_activity: Siste aktivitet
-        see: "Se '%{what}'"
+        empty: Det har ikke vært noen aktivitet her i det siste.
+        latest_activity: Siste Aktivitet
         latest_activity_message: "%{what} %{kind} ble %{action}"
       recent_inquiries:
-        latest_inquiries: Siste forespørsler
+        latest_inquiries: Siste Forespørsler
   updated:
     'with_article "the"': oppdatert
   created:
     'with_article "the"': opprettet
-
-  ago: "%{time} siden"
-  see: Se

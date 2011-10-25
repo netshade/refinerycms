@@ -1,13 +1,16 @@
 module Admin
   class ResourcesController < Admin::BaseController
 
-    crudify :resource, :order => "updated_at DESC"
+    crudify :resource,
+            :order => "updated_at DESC",
+            :xhr_paging => true
+
     before_filter :init_dialog
 
     def new
       @resource = Resource.new if @resource.nil?
 
-      @url_override = admin_resources_url(:dialog => from_dialog?)
+      @url_override = admin_resources_path(:dialog => from_dialog?)
     end
 
     def create
@@ -30,23 +33,18 @@ module Admin
         if @resources.all?(&:valid?)
           @resource_id = @resources.detect(&:persisted?).id
           @resource = nil
+
+          redirect_to request.query_parameters.merge(:action => 'insert')
+        else
+          self.insert
         end
-
-        insert
       end
-    end
-
-    def index
-      search_all_resources if searching?
-      paginate_all_resources
-
-      render :partial => 'resources' if request.xhr?
     end
 
     def insert
       self.new if @resource.nil?
 
-      @url_override = admin_resources_url(:dialog => from_dialog?, :insert => true)
+      @url_override = admin_resources_path(request.query_parameters.merge(:insert => true))
 
       if params[:conditions].present?
         extra_condition = params[:conditions].split(',')
@@ -79,10 +77,10 @@ module Admin
     end
 
     def paginate_resources(conditions={})
-      @resources = Resource.paginate   :page => (@paginate_page_number ||= params[:page]),
-                                       :conditions => conditions,
-                                       :order => 'created_at DESC',
-                                       :per_page => Resource.per_page(from_dialog?)
+      @resources = Resource.paginate :page => (@paginate_page_number ||= params[:page]),
+                                     :conditions => conditions,
+                                     :order => 'created_at DESC',
+                                     :per_page => Resource.per_page(from_dialog?)
     end
 
   end

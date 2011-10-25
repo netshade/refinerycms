@@ -311,7 +311,8 @@ background-image: url('/images/wymeditor/skins/refinery/eye.png');
 */
 /* make tools and containers play nicely next to eachother */
 
-.wym_skin_refinery .wym_tools, .wym_skin_refinery .wym_containers {
+.wym_skin_refinery .wym_tools, .wym_skin_refinery .wym_containers,
+.wym_skin_refinery .wym_classes_container {
   float: left;
   margin: 0px 0px 5px 0px;
 }
@@ -471,17 +472,16 @@ a.wym_wymeditor_link {
   display: block;
   position: absolute;
   left: 0px;
-  top: 29px;
+  top: 23px;
+  padding-top: 6px !important;
   width: 200px;
-  border-color: gray;
-  border-style: solid;
-  border-width: 0px 1px 1px 1px !important;
 }
 .wym_classes_hidden {
   display: none;
 }
 .wym_tools_class.activated {
   position: relative;
+  padding-bottom: 5px;
 }
 .wym_skin_refinery .wym_buttons .wym_tools_class .wym_classes li {
   float: left;

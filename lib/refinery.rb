@@ -1,1 +1,1 @@
-require File.expand_path('../../base/lib/refinery', __FILE__)
+require File.expand_path('../refinerycms', __FILE__)

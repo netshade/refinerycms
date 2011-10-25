@@ -41,9 +41,9 @@ var wymeditor_boot_options = $.extend({
   , langPath: "/javascripts/wymeditor/lang/"
   , iframeBasePath: '/'
   , classesItems: [
-    {name: 'text-align', rules:['left', 'center', 'right', 'justify'], join: '-'}
-    , {name: 'image-align', rules:['left', 'right'], join: '-'}
-    , {name: 'font-size', rules:['small', 'normal', 'large'], join: '-'}
+    {name: 'text-align', rules:[{name: 'left', title: '{Left}'}, {name: 'center', title: '{Center}'}, {name: 'right', title: '{Right}'}, {name: 'justify', title: '{Justify}'}], join: '-', title: '{Text_Align}'}
+    , {name: 'image-align', rules:[{name: 'left', title: '{Left}'}, {name: 'right', title: '{Right}'}], join: '-', title: '{Image_Align}'}
+    , {name: 'font-size', rules:[{name: 'small', title: '{Small}'}, {name: 'normal', title: '{Normal}'}, {name: 'large', title: '{Large}'}], join: '-', title: '{Font_Size}'}
   ]
 
   , containersItems: [
@@ -69,7 +69,9 @@ var wymeditor_boot_options = $.extend({
     ,{'name': 'ToggleHtml', 'title': 'HTML', 'css': 'wym_tools_html'}
   ]
 
-  ,toolsHtml: "<ul class='wym_tools wym_section wym_buttons'>" + WYMeditor.TOOLS_ITEMS + WYMeditor.CLASSES + "</ul>"
+  ,toolsHtml: "<ul class='wym_tools wym_section wym_buttons'>"
+                + WYMeditor.TOOLS_ITEMS
+              + "</ul>"
 
   ,toolsItemHtml:
     "<li class='" + WYMeditor.TOOL_CLASS + "'>"
@@ -78,12 +80,14 @@ var wymeditor_boot_options = $.extend({
       + "</a>"
     + "</li>"
 
-  , classesHtml: "<li class='wym_tools_class'>"
-                 + "<a href='#' name='" + WYMeditor.APPLY_CLASS + "' title='"+ WYMeditor.APPLY_CLASS +"' class='no-tooltip'>"
-                   + WYMeditor.APPLY_CLASS
-                 + "</a>"
-                 + "<ul class='wym_classes wym_classes_hidden'>" + WYMeditor.CLASSES_ITEMS + "</ul>"
-                + "</li>"
+  , classesHtml: "<ul class='wym_classes_container wym_section wym_buttons'>"
+                   + "<li class='wym_tools_class'>"
+                   + "<a href='#' name='" + WYMeditor.APPLY_CLASS + "' title='"+ WYMeditor.APPLY_CLASS +"' class='no-tooltip'>"
+                     + WYMeditor.APPLY_CLASS
+                   + "</a>"
+                   + "<ul class='wym_classes wym_classes_hidden'>" + WYMeditor.CLASSES_ITEMS + "</ul>"
+                  + "</li>"
+                + "</ul>"
 
   , classesItemHtml: "<li><a href='#' name='"+ WYMeditor.CLASS_NAME + "'>"+ WYMeditor.CLASS_TITLE+ "</a></li>"
   , classesItemHtmlMultiple: "<li class='wym_tools_class_multiple_rules'>"
@@ -103,6 +107,7 @@ var wymeditor_boot_options = $.extend({
     + "<div class='wym_area_top clearfix'>"
       + WYMeditor.CONTAINERS
       + WYMeditor.TOOLS
+      + WYMeditor.CLASSES
     + "</div>"
     + "<div class='wym_area_main'>"
       + WYMeditor.HTML
@@ -113,7 +118,7 @@ var wymeditor_boot_options = $.extend({
 
   , iframeHtml:
     "<div class='wym_iframe wym_section'>"
-     + "<iframe id='WYMeditor_" + WYMeditor.INDEX + "' src='" + WYMeditor.IFRAME_BASE_PATH + "wymiframe'"
+     + "<iframe id='WYMeditor_" + WYMeditor.INDEX + "'" + ($.browser.msie ? " src='" + WYMeditor.IFRAME_BASE_PATH + "wymiframe'" : "")
      + " frameborder='0' marginheight='0' marginwidth='0' border='0'"
      + " onload='this.contentWindow.parent.WYMeditor.INSTANCES[" + WYMeditor.INDEX + "].initIframe(this);'></iframe>"
     +"</div>"
@@ -223,12 +228,41 @@ var wymeditor_boot_options = $.extend({
 }, custom_wymeditor_boot_options);
 
 // custom function added by us to hook into when all wymeditor instances on the page have finally loaded:
-WYMeditor.loaded = function(){};
+WYMeditor.loaded = function(){
+  // Internet explorer doesn't like this (which versions??)
+  var doc = (iframe.contentDocument || iframe.contentWindow);
+  if(doc.document) {
+    doc = doc.document;
+  }
+  if (!$.browser.msie) {
+    doc.open('text/html', 'replace');
+    html = "<!DOCTYPE html>\
+    <html>\
+      <head>\
+        <title>WYMeditor</title>\
+        <meta charset='" + $('meta[charset]').attr('charset') + "' />\
+        <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1' />\
+      </head>\
+      <body class='wym_iframe'>\
+      </body>\
+    </html>";
+    doc.write(html);
+    doc.close();
 
+    var doc_head = doc.head || $(doc).find('head').get(0);
+    $.each(["wymeditor/skins/refinery/wymiframe", "formatting", "refinery/theme", "theme"], function(i, href) {
+      $("<link href='/stylesheets/" + href + ".css?"+Math.random().toString().split('.')[1]+"' media='all' rel='stylesheet' />").appendTo(doc_head);
+    });
+  }
+  if ((id_of_editor = wym._element.parent().attr('id')) != null) {
+    $(doc.body).addClass(id_of_editor);
+  }
+
+  wym.initIframe(iframe);
+};
 
 WYMeditor.init = function() {
-  wymeditor_inputs = $('.wymeditor');
-  wymeditor_inputs = wymeditor_inputs.filter(function(index) {
+  wymeditor_inputs = $('.wymeditor').filter(function(index) {
     for (i=0; i < WYMeditor.INSTANCES.length; i++) {
       if (WYMeditor.INSTANCES[i]._element.attr('id') == $(this).attr('id')) {
         return false;
@@ -239,7 +273,7 @@ WYMeditor.init = function() {
   });
 
   wymeditor_inputs.each(function(input) {
-    if ((containing_field = $(this).parents('.field')).length > 0 && containing_field.get(0).style.height === '') {
+    if ((containing_field = $(this).parents('.field')).length > 0 && containing_field.get(0).style.height.replace('auto', '') === '') {
       containing_field.addClass('hide-overflow')
                       .css('height', $(this).outerHeight() - containing_field.offset().top + $(this).offset().top + 45);
     }

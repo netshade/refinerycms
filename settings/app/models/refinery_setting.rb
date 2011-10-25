@@ -13,6 +13,10 @@ class RefinerySetting < ActiveRecord::Base
   # Docs for acts_as_indexed http://github.com/dougal/acts_as_indexed
   acts_as_indexed :fields => [:name]
 
+  attr_accessible :name, :value, :destroyable,
+                  :scoping, :restricted, :callback_proc_as_string,
+                  :form_value_type
+
   before_save do |setting|
     setting.restricted = false if setting.restricted.nil?
   end
@@ -28,7 +32,7 @@ class RefinerySetting < ActiveRecord::Base
     end
 
     def ensure_cache_exists!
-      if (result = Rails.cache.read(cache_key)).nil?
+      if (result = Rails.cache.read(cache_key, :multithread => true)).nil?
         result = rewrite_cache
       end
 
@@ -63,13 +67,13 @@ class RefinerySetting < ActiveRecord::Base
 
     def rewrite_cache
       # delete cache
-      Rails.cache.delete(cache_key)
+      Rails.cache.delete(cache_key, :multithread => true)
 
       # generate new cache
       result = (to_cache(all) if (table_exists? rescue false))
 
       # write cache
-      Rails.cache.write(cache_key, result)
+      Rails.cache.write(cache_key, result, :multithread => true)
 
       # return cache, or lack thereof.
       result ||= []
@@ -131,24 +135,14 @@ class RefinerySetting < ActiveRecord::Base
       # Return the value
       setting.value
     end
-
-    # DEPRECATED for removal at >= 0.9.9
-    def []=(name, value)
-      warning = ["\n*** DEPRECATION WARNING ***"]
-      warning << "You should not use this anymore: RefinerySetting[#{name.inspect}] = #{value.inspect}."
-      warning << "\nInstead, you should use RefinerySetting.set(#{name.inspect}, #{value.inspect})"
-      warning << ""
-      warning << "Called from: #{caller.first.inspect}\n\n"
-      $stdout.puts warning.join("\n")
-
-      set(name, value)
-    end
   end
 
   # prettier version of the name.
   # site_name becomes Site Name
   def title
-    name.titleize
+    result = name.to_s.titleize
+    result += ' (' + scoping.titleize + ')' if scoping.is_a?(String)
+    result
   end
 
   # form_value is so that on the web interface we can display a sane value.

@@ -33,6 +33,7 @@ sv:
     pages:
       delete: Ta bort den här sidan för alltid
       edit: Redigera den här sidan
+      reserved_system_word: Tyvärr är titlen ett reserverat ord i systemet
       page:
         view_live_html: Visa den här sidan live <br/><em>(öppnas i ett nytt fönster)</em>
         hidden: dold
@@ -62,19 +63,12 @@ sv:
         link_url_help: Om du vill att den här sidan vidarebefodrar till en annan sida när du väljer den i menyn, fyll i en URL. Tex. http://www.google.com/. Annars lämna tom.
         parent_page_help: Du kan låta sidor bli undersidor till varandra. Om du vill att den här sidan ska vara en toppnivåsida, lämna tom.
         custom_title_help: Om du vill att sidan har en annan huvudrubrik än den som visas i menyn, välj Text, och fyll i här.
-      form_advanced_options_seo:
-        seo: Optimering för sökmotorer
-        seo_override_title: Titel i webbläsaren
-        seo_override_title_help: Fyll i en titel med 5 till 10 ord som summerar innehållet på den här sidan.
-        meta_keywords_title: Meta nyckelord
-        meta_keywords_help: Fyll i 5 till 10 nyckelord som relaterar till den här sidan. Separera dina nyckelord med komma-tecken.
-        meta_description_title: Meta beskrivning
-        meta_description_help: Fyll i konkret vad sidan handlar om. Använd en, två eller tre meningar.
-      index:
-        create_new_page: Lägg till ny sida
+      actions:
+        create_new_page: Lägg till en ny sida
         reorder_pages: Ändra ordning på sidor
         reorder_pages_done: Spara ny ordning på sidor
-        no_pages_yet: Det finns inga sidor ännu. Klicka på "Lägg till ny sida" för att skapa din första sida.
+      records:
+        no_pages_yet: Det finns inga sidor ännu. Klicka på "Lägg till en ny sida" för att skapa din första sida.
   activerecord:
     models:
       page: sida

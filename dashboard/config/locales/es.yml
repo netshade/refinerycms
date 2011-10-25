@@ -2,10 +2,12 @@ es:
   plugins:
     refinery_dashboard:
       title: Panel de control
+      description: Da una visión de la actividad en Refinery
   admin:
     dashboard:
       index:
         quick_tasks: Tareas comunes
+      actions:
         add_a_new_page: Añadir nueva página
         update_a_page: Actualizar una página
         upload_a_image: Subir una imagen
@@ -13,15 +15,16 @@ es:
         change_language: Cambiar el idioma
         see_home_page: Ver la página principal
       recent_activity:
-        latest_activity: Última actividad
-        latest_activity_message: %{kind} %{what} ha sido %{action}
+        empty: No hay actividad reciente.
+        latest_activity: Última Actividad
+        latest_activity_message: '%{kind} %{what} ha sido %{action}'
       recent_inquiries:
-        latest_inquiries: Últimas solicitudes
+        latest_inquiries: Últimas Solicitudes
   updated:
-    'with_article "las"':  actualizadas
-    'with_article "los"':  actualizados
+    'with_article "femenino"':  actualizada
+    'with_article "masculino"':  actualizado
     'with_article "the"':  actualizado
   created:
-    'with_article "las"':  creadas
-    'with_article "los"':  creados
+    'with_article "femenino"':  creada
+    'with_article "masculino"':  creado
     'with_article "the"':  creado

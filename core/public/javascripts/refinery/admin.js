@@ -13,11 +13,28 @@ if(typeof(window.onpopstate) == "object"){
   $(window).bind('popstate', function(e) {
     // this fires on initial page load too which we don't need.
     if(!initialLoad) {
-      $.get(location.href, function(data) {
-        $('.pagination_container').slideTo(data);
-      });
+      $(document).paginateTo((location.pathname + location.href.split(location.pathname)[1]));
     }
     initialLoad = false;
+  });
+}
+
+$.fn.paginateTo = function(stateUrl) {
+  // Grab the url, ensuring not to cache.
+  $.ajax({
+    url: stateUrl,
+    cache: false,
+    success: function(data) {
+      $('.pagination_container').slideTo(data);
+
+      // remove caching _ argument.
+      $('.pagination_container .pagination a').each(function(i, a){
+        $(this).attr('href', $(this).attr('href').replace(/\?\_\=[^&]+&/, '?'));
+      })
+    },
+    failure: function(data) {
+      window.location = popstate_location;
+    }
   });
 }
 
@@ -26,6 +43,7 @@ $.fn.slideTo = function(response) {
   $(this).applyMinimumHeightFromChildren();
   $(this).find('.pagination_frame').removeClass('frame_right').addClass('frame_center');
   init_modal_dialogs();
+  init_tooltips();
   return $(this);
 }
 
@@ -45,12 +63,17 @@ init_ajaxy_pagination = function(){
   if(typeof(window.history.pushState) == 'function' && $('.pagination_container').length > 0){
     var pagination_pages = $('.pagination_container .pagination a');
     pagination_pages.live('click',function(e) {
-      this.href = (this.href.replace(/(\&(amp\;)?)?from_page\=\d+/, '')
-                   + '&from_page=' + $(this).parent().find('em').text()).replace('?&', '?');
-      history.pushState({ path: this.path }, '', this.href);
-      $.get(this.href, function(data) {
-        $('.pagination_container').slideTo(data)
-      })
+      navigate_to = this.href.replace(/(\&(amp\;)?)?from_page\=\d+/, '');
+      navigate_to += '&from_page=' + $(this).parent().find('em').text();
+      navigate_to = navigate_to.replace('?&', '?');
+
+      var current_state_location = (location.pathname + location.href.split(location.pathname)[1]);
+      window.history.pushState({
+        path: current_state_location
+      }, '', navigate_to);
+
+      $(document).paginateTo(navigate_to);
+
       e.preventDefault();
     });
   }
@@ -142,7 +165,11 @@ init_interface = function() {
   });
 
   $('.form-actions .form-actions-left input:submit#submit_button').click(function(e) {
-    $("<img src='/images/refinery/icons/ajax-loader.gif' width='16' height='16' class='save-loader' />").appendTo($(this).parent());
+    $("<img src='/images/refinery/ajax-loader.gif' width='16' height='16' class='save-loader' />").appendTo($(this).parent());
+  });
+
+  $('a.suppress').live('click', function(e){
+    e.preventDefault();
   });
 };
 
@@ -238,7 +265,7 @@ init_submit_continue = function(){
   if ((continue_editing_button = $('#continue_editing')).length > 0 && continue_editing_button.attr('rel') != 'no-prompt') {
     $('#editor_switch a').click(function(e) {
       if ($('form[data-changes-made]').length > 0) {
-        if (!confirm("Any changes you've made will be lost. Are you sure you want to continue without saving?")) {
+        if (!confirm(I18n.t('js.admin.confirm_changes'))) {
           e.preventDefault();
         }
       }
@@ -293,83 +320,85 @@ init_tooltips = function(args){
   {
     // create tooltip on hover and destroy it on hoveroff.
     $(element).hover(function(e) {
-      $(this).oneTime(350, 'tooltip', $.proxy(function() {
-        $('.tooltip').remove();
-        tooltip = $("<div class='tooltip'><div><span></span></div></div>").appendTo('#tooltip_container');
-        tooltip.find("span").html($(this).attr('tooltip'));
-        if(!$.browser.msie) {
-          tooltip.corner('6px').find('span').corner('6px');
-        }
+      if (e.type == 'mouseenter' || e.type == 'mouseover') {
+        $(this).oneTime(350, 'tooltip', $.proxy(function() {
+          $('.tooltip').remove();
+          tooltip = $("<div class='tooltip'><div><span></span></div></div>").appendTo('#tooltip_container');
+          tooltip.find("span").html($(this).attr('tooltip'));
+          if(!$.browser.msie) {
+            tooltip.corner('6px').find('span').corner('6px');
+          }
 
-        tooltip_nib_image = $.browser.msie ? 'tooltip-nib.gif' : 'tooltip-nib.png';
-        nib = $("<img src='/images/refinery/"+tooltip_nib_image+"' class='tooltip-nib'/>").appendTo('#tooltip_container');
+          tooltip_nib_image = $.browser.msie ? 'tooltip-nib.gif' : 'tooltip-nib.png';
+          nib = $("<img src='/images/refinery/"+tooltip_nib_image+"' class='tooltip-nib'/>").appendTo('#tooltip_container');
 
-        tooltip.css({
-          'opacity': 0
-          , 'maxWidth': '300px'
-        });
-        required_left_offset = $(this).offset().left - (tooltip.outerWidth() / 2) + ($(this).outerWidth() / 2);
-        tooltip.css('left', (required_left_offset > 0 ? required_left_offset : 0));
-
-        var tooltip_offset = tooltip.offset();
-        var tooltip_outer_width = tooltip.outerWidth();
-        if (tooltip_offset && (tooltip_offset.left + tooltip_outer_width) > (window_width = $(window).width())) {
-          tooltip.css('left', window_width - tooltip_outer_width);
-        }
-
-        tooltip.css({
-          'top': $(this).offset().top - tooltip.outerHeight() - 2
-        });
-
-        nib.css({
-          'opacity': 0
-        });
-
-        if (tooltip_offset = tooltip.offset()) {
-          nib.css({
-            'left': $(this).offset().left + ($(this).outerWidth() / 2) - 5
-            , 'top': tooltip_offset.top + tooltip.height()
+          tooltip.css({
+            'opacity': 0
+            , 'maxWidth': '300px'
           });
-        }
+          required_left_offset = $(this).offset().left - (tooltip.outerWidth() / 2) + ($(this).outerWidth() / 2);
+          tooltip.css('left', (required_left_offset > 0 ? required_left_offset : 0));
 
-        try {
-          tooltip.animate({
-            top: tooltip_offset.top - 10
-            , opacity: 1
-          }, 200, 'swing');
-          nib.animate({
-            top: nib.offset().top - 10
-            , opacity: 1
-          }, 200);
-        } catch(e) {
-          tooltip.show();
-          nib.show();
-        }
-      }, $(this)));
+          var tooltip_offset = tooltip.offset();
+          var tooltip_outer_width = tooltip.outerWidth();
+          if (tooltip_offset && (tooltip_offset.left + tooltip_outer_width) > (window_width = $(window).width())) {
+            tooltip.css('left', window_width - tooltip_outer_width);
+          }
 
-    }, function(e) {
-      $(this).stopTime('tooltip');
-      if ((tt_offset = (tooltip = $('.tooltip')).css('z-index', '-1').offset()) == null) {
-        tt_offset = {'top':0,'left':0};
+          tooltip.css({
+            'top': $(this).offset().top - tooltip.outerHeight() - 2
+          });
+
+          nib.css({
+            'opacity': 0
+          });
+
+          if (tooltip_offset = tooltip.offset()) {
+            nib.css({
+              'left': $(this).offset().left + ($(this).outerWidth() / 2) - 5
+              , 'top': tooltip_offset.top + tooltip.height()
+            });
+          }
+
+          try {
+            tooltip.animate({
+              top: tooltip_offset.top - 10
+              , opacity: 1
+            }, 200, 'swing');
+            nib.animate({
+              top: nib.offset().top - 10
+              , opacity: 1
+            }, 200);
+          } catch(e) {
+            tooltip.show();
+            nib.show();
+          }
+        }, $(this)));
+      } else if (e.type == 'mouseleave' || e.type == 'mouseout') {
+        $(this).stopTime('tooltip');
+        if ((tt_offset = (tooltip = $('.tooltip')).css('z-index', '-1').offset()) == null) {
+          tt_offset = {'top':0,'left':0};
+        }
+        tooltip.animate({
+          top: tt_offset.top - 20
+          , opacity: 0
+        }, 125, 'swing', function(){
+          $(this).remove();
+        });
+        if ((nib_offset = (nib = $('.tooltip-nib')).offset()) == null) {
+          nib_offset = {'top':0,'left':0};
+        }
+        nib.animate({
+          top: nib_offset.top - 20
+          , opacity: 0
+        }, 125, 'swing', function(){
+          $(this).remove();
+        });
       }
-      tooltip.animate({
-        top: tt_offset.top - 20
-        , opacity: 0
-      }, 125, 'swing', function(){
-        $(this).remove();
-      });
-      if ((nib_offset = (nib = $('.tooltip-nib')).offset()) == null) {
-        nib_offset = {'top':0,'left':0};
-      }
-      nib.animate({
-        top: nib_offset.top - 20
-        , opacity: 0
-      }, 125, 'swing', function(){
-        $(this).remove();
-      });
     }).click(function(e) {
       $(this).stopTime('tooltip');
     });
+
     if ($(element).attr('tooltip') == null) {
       $(element).attr('tooltip', $(element).attr('title'));
     }
@@ -383,9 +412,12 @@ init_tooltips = function(args){
 var link_tester = {
   initialised: false
   , init: function(test_url, test_email) {
-    this.test_url    = test_url;
-    this.test_email  = test_email;
-    this.initialised = true;
+
+    if (!this.initialised) {
+      this.test_url    = test_url;
+      this.test_email  = test_email;
+      this.initialised = true;
+    }
   },
 
   email: function(value, callback) {
@@ -408,14 +440,14 @@ var link_tester = {
     loader_img.insertAfter($(textbox_id));
     result_span.insertAfter(loader_img);
 
-    $(textbox_id).bind('paste keypress',function(){
+    $(textbox_id).bind('paste blur',function(){
       $(textbox_id).stop(true); // Clear the current queue; if we weren't checking yet, cancel it.
       $(textbox_id + '_test_loader').hide();
       $(textbox_id + '_test_result').hide();
       $(textbox_id + '_test_result').removeClass('success_icon').removeClass('failure_icon');
 
-      // Wait one second before checking.
-      $(textbox_id).delay(1000).queue(function () {
+      // Wait 300ms before checking.
+      $(textbox_id).delay(300).queue(function () {
         $(textbox_id + '_test_loader').show();
         $(textbox_id + '_test_result').hide();
         $(textbox_id + '_test_result').removeClass('success_icon').removeClass('failure_icon');
@@ -450,13 +482,16 @@ var link_tester = {
 var link_dialog = {
   initialised: false
   , init: function(){
-    this.init_tabs();
-    this.init_resources_submit();
-    this.init_close();
-    this.page_tab();
-    this.web_tab();
-    this.email_tab();
-    this.initialised = true;
+
+    if (!this.initialised) {
+      this.init_tabs();
+      this.init_resources_submit();
+      this.init_close();
+      this.page_tab();
+      this.web_tab();
+      this.email_tab();
+      this.initialised = true;
+    }
   },
 
   init_tabs: function(){
@@ -534,52 +569,37 @@ var link_dialog = {
   },
 
   web_tab: function(){
-    link_tester.validate_url_textbox("#web_address_text",  function() {
+    link_tester.validate_url_textbox("#web_address_text", function(){});
+
+    $('#web_address_text, #web_address_target_blank').change(function(){
       link_dialog.update_parent( $('#web_address_text').val(),
                                  $('#web_address_text').val(),
-                                 ($('#web_address_target_blank').checked ? "_blank" : "")
-                               );
-     });
-
-    $('#web_address_target_blank').click(function(){
-      parent.document.getElementById('wym_target').value = this.checked ? "_blank" : "";
+                                 $('#web_address_target_blank').get(0).checked ? "_blank" : ""
+      );
     });
   },
 
   email_tab: function() {
+    link_tester.validate_email_textbox("#email_address_text", function(){});
+
     $('#email_address_text, #email_default_subject_text, #email_default_body_text').change(function(e){
       var default_subject = $('#email_default_subject_text').val(),
           default_body = $('#email_default_body_text').val(),
           mailto = "mailto:" + $('#email_address_text').val(),
           modifier = "?",
-          icon = '';
-
-      $('#email_address_test_loader').show();
-      $('#email_address_test_result').hide();
-      $('#email_address_test_result').removeClass('success_icon').removeClass('failure_icon');
-
-
-      link_tester.email(mailto, function (success) {
-        if (success) {
-          icon = 'success_icon';
-        }else{
-          icon = 'failure_icon';
-        }
-        $('#email_address_test_result').addClass(icon).show();
-        $('#email_address_test_loader').hide();
-      });
+          additional = "";
 
       if(default_subject.length > 0){
-        mailto += modifier + "subject=" + default_subject;
+        additional += modifier + "subject=" + default_subject;
         modifier = "&";
       }
 
       if(default_body.length > 0){
-        mailto += modifier + "body=" + default_body;
+        additional += modifier + "body=" + default_body;
         modifier = "&";
       }
 
-      link_dialog.update_parent(mailto, mailto.replace('mailto:', ''));
+      link_dialog.update_parent(mailto + additional, mailto.replace('mailto:', ''));
     });
   },
 
@@ -601,30 +621,33 @@ var link_dialog = {
 var page_options = {
   initialised: false
   , init: function(enable_parts, new_part_url, del_part_url){
-    // set the page tabs up, but ensure that all tabs are shown so that when wymeditor loads it has a proper height.
-    page_options.tabs = $('#page-tabs');
-    page_options.tabs.tabs({tabTemplate: '<li><a href="#{href}">#{label}</a></li>'});
-    page_options.tabs.find(' > ul li a').corner('top 5px');
 
-    part_shown = $('#page-tabs .page_part.field').not('.ui-tabs-hide');
-    $('#page-tabs .page_part.field').removeClass('ui-tabs-hide');
+    if (!this.initialised) {
+      // set the page tabs up, but ensure that all tabs are shown so that when wymeditor loads it has a proper height.
+      page_options.tabs = $('#page-tabs');
+      page_options.tabs.tabs({tabTemplate: '<li><a href="#{href}">#{label}</a></li>'});
+      page_options.tabs.find(' > ul li a').corner('top 5px');
 
-    this.enable_parts = enable_parts;
-    this.new_part_url = new_part_url;
-    this.del_part_url = del_part_url;
-    this.show_options();
-    this.title_type();
+      part_shown = $('#page-tabs .page_part.field').not('.ui-tabs-hide');
+      $('#page-tabs .page_part.field').removeClass('ui-tabs-hide');
 
-    $(document).ready($.proxy(function(){
-      // hide the tabs that are supposed to be hidden.
-      $('#page-tabs .page_part.field').not(this).addClass('ui-tabs-hide');
-      $('#page-tabs > ul li a').corner('top 5px');
-    }, part_shown));
+      this.enable_parts = enable_parts;
+      this.new_part_url = new_part_url;
+      this.del_part_url = del_part_url;
+      this.show_options();
+      this.title_type();
 
-    if(this.enable_parts){
-      this.page_part_dialog();
+      $(document).ready($.proxy(function(){
+        // hide the tabs that are supposed to be hidden.
+        $('#page-tabs .page_part.field').not(this).addClass('ui-tabs-hide');
+        $('#page-tabs > ul li a').corner('top 5px');
+      }, part_shown));
+
+      if(this.enable_parts){
+        this.page_part_dialog();
+      }
+      this.initialised = true;
     }
-    this.initialised = true;
   },
 
   show_options: function(){
@@ -639,7 +662,7 @@ var page_options = {
   },
 
   title_type: function(){
-    $("input[name=page\[custom_title_type\]]").change(function(){
+    $('input#page_custom_title').parents('.field').find('input:radio').change(function(){
       $('#custom_title_text, #custom_title_image').hide();
       $('#custom_title_' + this.value).show();
     });
@@ -669,26 +692,25 @@ var page_options = {
         var tab_title = part_title.toLowerCase().replace(" ", "_");
 
         if ($('#part_' + tab_title).size() === 0) {
-          $.get(page_options.new_part_url,
-            {
+          $.get(page_options.new_part_url, {
               title: part_title
               , part_index: $('#new_page_part_index').val()
               , body: ''
-            }
-            , function(data, status){
+            }, function(data, status){
               $('#submit_continue_button').remove();
               // Add a new tab for the new content section.
-              $(data).appendTo('#page_part_editors');
+              $('#page_part_editors').append(data);
               page_options.tabs.tabs('add', '#page_part_new_' + $('#new_page_part_index').val(), part_title);
               page_options.tabs.tabs('select', $('#new_page_part_index').val());
 
-              // turn the new textarea into a wymeditor.
-              $('#page_parts_attributes_' + $('#new_page_part_index').val() + "_body").wymeditor(wymeditor_boot_options);
-
-              // hook into wymedtior to instruct it to select this new tab again once it has loaded.
+              // hook into wymeditor to instruct it to select this new tab again once it has loaded.
               WYMeditor.onload_functions.push(function() {
                 page_options.tabs.tabs('select', $('#new_page_part_index').val());
               });
+
+              // turn the new textarea into a wymeditor.
+              $('#page_part_new_' + $('#new_page_part_index').val()).appendTo('#page_part_editors')
+              WYMeditor.init();
 
               // Wipe the title and increment the index counter by one.
               $('#new_page_part_index').val(parseInt($('#new_page_part_index').val(), 10) + 1);
@@ -738,11 +760,14 @@ var image_dialog = {
   , callback: null
 
   , init: function(callback){
-    this.callback = callback;
-    this.init_tabs();
-    this.init_select();
-    this.init_actions();
-    this.initialised = true;
+
+    if (!this.initialised) {
+      this.callback = callback;
+      this.init_tabs();
+      this.init_select();
+      this.init_actions();
+      this.initialised = true;
+    }
     return this;
   }
 
@@ -856,43 +881,46 @@ var image_dialog = {
 var list_reorder = {
   initialised: false
   , init: function() {
-    $('#reorder_action').click(list_reorder.enable_reordering);
-    $('#reorder_action_done').click(list_reorder.disable_reordering);
-    if(list_reorder.tree === false) {
-      list_reorder.sortable_list.find('li').addClass('no-nest');
-    }
-    list_reorder.sortable_list.nestedSortable({
-      disableNesting: 'no-nest',
-      forcePlaceholderSize: true,
-      handle: list_reorder.tree ? 'div' : null,
-      items: 'li',
-      opacity: .6,
-      placeholder: 'placeholder',
-      tabSize: 25,
-      tolerance: 'pointer',
-      toleranceElement: list_reorder.tree ? '> div' : null,
-      disabled: true,
-      start: function () {
-      },
-      change: function () {
-        if (list_reorder.tree) {
-          list_reorder.reset_branch_classes(this);
-        }
-      },
-      stop: function () {
-        if (list_reorder.tree) {
-          list_reorder.reset_branch_classes(this);
-        } else {
-          list_reorder.reset_on_off_classes(this);
-        }
+
+    if (!this.initialised) {
+      $('#reorder_action').click(list_reorder.enable_reordering);
+      $('#reorder_action_done').click(list_reorder.disable_reordering);
+      if(list_reorder.tree === false) {
+        list_reorder.sortable_list.find('li').addClass('no-nest');
       }
-    });
-    if (list_reorder.tree) {
-      list_reorder.reset_branch_classes(list_reorder.sortable_list);
-    } else {
-      list_reorder.reset_on_off_classes(list_reorder.sortable_list);
+      list_reorder.sortable_list.nestedSortable({
+        disableNesting: 'no-nest',
+        forcePlaceholderSize: true,
+        handle: list_reorder.tree ? 'div' : null,
+        items: 'li',
+        opacity: .6,
+        placeholder: 'placeholder',
+        tabSize: 25,
+        tolerance: 'pointer',
+        toleranceElement: list_reorder.tree ? '> div' : null,
+        disabled: true,
+        start: function () {
+        },
+        change: function () {
+          if (list_reorder.tree) {
+            list_reorder.reset_branch_classes(this);
+          }
+        },
+        stop: function () {
+          if (list_reorder.tree) {
+            list_reorder.reset_branch_classes(this);
+          } else {
+            list_reorder.reset_on_off_classes(this);
+          }
+        }
+      });
+      if (list_reorder.tree) {
+        list_reorder.reset_branch_classes(list_reorder.sortable_list);
+      } else {
+        list_reorder.reset_on_off_classes(list_reorder.sortable_list);
+      }
+      this.initialised = true;
     }
-    this.initialised = true;
   }
   , reset_on_off_classes: function(ul) {
     $("> li", ul).each(function(i, li) {
@@ -946,12 +974,7 @@ var list_reorder = {
   }
 
   , restore_controls: function(e) {
-    if (list_reorder.tree && !$.browser.msie) {
-      list_reorder.sortable_list.add(list_reorder.sortable_list.find('ul, li, div')).draggable({ disabled: true });
-    } else {
-      $(list_reorder.sortable_list).sortable('destroy');
-    }
-    $(list_reorder.sortable_list).removeClass('reordering, ui-sortable');
+    $(list_reorder.sortable_list).removeClass('reordering');
 
     $('#sortable_list .actions, #site_bar, header > *:not(script)').fadeTo(250, 1);
     $('#actions *:not("#reorder_action_done, #reorder_action")').not($('#reorder_action_done').parents('li, ul, div')).fadeTo(250, 1, function() {
@@ -977,13 +1000,16 @@ var image_picker = {
   }
 
   , init: function(new_options){
-    this.options = $.extend(this.options, new_options);
-    $(this.options.picker_container).find(this.options.remove_image_button)
-      .click($.proxy(this.remove_image, {container: this.options.picker_container, picker: this}));
-    $(this.options.picker_container).find(this.options.image_toggler)
-      .click($.proxy(this.toggle_image, {container: this.options.picker_container, picker: this}));
 
-    this.initialised = true;
+    if (!this.initialised) {
+      this.options = $.extend(this.options, new_options);
+      $(this.options.picker_container).find(this.options.remove_image_button)
+        .click($.proxy(this.remove_image, {container: this.options.picker_container, picker: this}));
+      $(this.options.picker_container).find(this.options.image_toggler)
+        .click($.proxy(this.toggle_image, {container: this.options.picker_container, picker: this}));
+
+      this.initialised = true;
+    }
 
     return this;
   }
@@ -1032,8 +1058,11 @@ var resource_picker = {
   , callback: null
 
   , init: function(callback) {
-    this.callback = callback;
-    this.initialised = true;
+
+    if (!this.initialised) {
+      this.callback = callback;
+      this.initialised = true;
+    }
   }
 };
 
@@ -1103,5 +1132,5 @@ parseURL = function(url)
 };
 
 iframed = function() {
-  return (parent && parent.document.location.href != document.location.href && $.isFunction(parent.$));
+  return (parent && parent.document && parent.document.location.href != document.location.href && $.isFunction(parent.$));
 };

@@ -13,7 +13,7 @@
       <input type='radio' name='link_to' value='email_address' id='link_to_email_address' <%= "checked='true'" if @email_address_area_selected %> />
       <label for='link_to_email_address' class='stripped'><%= t('tab_name', :scope => 'admin.pages_dialogs.link_to.email_address') %></label>
     </span>
-    <% if ::Refinery::Plugins.registered.names.include?("refinery_files") %>
+    <% if ::Refinery::Plugins.registered.names.include?("refinery_files") and @resources.any? %>
       <span id="resource_file_radio" class="radio<%= " selected_radio" if @resource_area_selected %>">
         <input type="radio" name="link_to" value="resource_file" id="link_to_resource_file" <%= "checked='true'" if @resource_area_selected %> />
         <label for="link_to_resource_file" class="stripped"><%= t('tab_name', :scope => 'admin.pages_dialogs.link_to.your_resource') %></label>
@@ -25,14 +25,20 @@
     <div id='your_page_area' class='dialog_area' <%= "style='display: none'" unless @page_area_selected %>>
       <input type='hidden' name='selected_image' id='selected_image' />
       <div id='your_page_content' class='clearfix'>
-        <div id='pages_list'>
+        <div id='pages_list' class='pages_list'>
           <ul class="link_list">
             <%= render :partial => "page_link", :collection => @pages,
+<<<<<<< HEAD
                        :locals => {:child => 0, :link_to_arguments => { :onclick => "return false;" } } %>
+=======
+                       :locals => {
+                         :child => 0,
+                         :link_to_arguments => {}
+                       } %>
+>>>>>>> 1-0-stable
           </ul>
           <%= will_paginate @pages,
                             :param_name => :page,
-                            :renderer => Refinery::LinkRenderer,
                             :id => 'pages_paginate' %>
         </div>
       </div>
@@ -41,7 +47,6 @@
       <div id='web_address_content'>
         <label for='web_address_text'><%= t('location', :scope => 'admin.pages_dialogs.link_to.web_address') %></label>
         <%= text_field :web_address, :text, :value => @web_address_text, :style => "width: 70%" %>
-
         <label><%= t('new_window', :scope => 'admin.pages_dialogs.link_to.web_address') %></label>
         <input type='checkbox' name='web_address_target_blank' id='web_address_target_blank' <%= "checked='checked'" if @web_address_target_blank %> />
         <label for='web_address_target_blank' class='stripped'><%= t('new_window_label', :scope => 'admin.pages_dialogs.link_to.web_address') %></label>
@@ -59,8 +64,6 @@
         <div class='field'>
           <label for='email_address_text'><%= t('tab_name', :scope => 'admin.pages_dialogs.link_to.email_address') %></label>
           <%= text_field :email_address, :text, :value => @email_address_text, :style => "width: 70%" %>
-          <img id='email_address_test_loader' src='/images/refinery/ajax-loader.gif' alt='Testing...' style='display: none;'/>
-          <span id='email_address_test_result'></span>
         </div>
 
         <div class='field'>
@@ -89,9 +92,9 @@
         </ol>
       </div>
     </div>
-    <% if ::Refinery::Plugins.registered.names.include?("refinery_files") %>
+    <% if ::Refinery::Plugins.registered.names.include?("refinery_files") and @resources.any? %>
       <div id="resource_file_area"<%= " style='display:none'" unless @resource_area_selected %> class="dialog_area">
-        <div id='pages_list'>
+        <div id='resources_list' class='pages_list'>
           <ul class="link_list">
             <% @resources.each do |resource| -%>
               <% resource_linked = (resource.url == params[:current_link]) unless params[:current_link].blank? %>
@@ -105,8 +108,7 @@
           </ul>
           <%= will_paginate @resources,
                             :param_name => :resource_page,
-                            :renderer => Refinery::LinkRenderer,
-                            :url => {:paginating => "resource_file"},
+                            :params => {:paginating => "resource_file"},
                             :id => 'resouces_paginate' %>
         </div>
       </div>
